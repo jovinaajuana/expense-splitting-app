@@ -12,7 +12,7 @@ interface SettlementPanelProps {
 }
 
 export function SettlementPanel({ group, onRecordPayment }: SettlementPanelProps) {
-  const [payerId, setPayerId] = useState("")
+  const [payerId, setPayerId] = useState(group.members[0]?.id ?? "")
   const [payeeId, setPayeeId] = useState("")
   const [amount, setAmount] = useState("")
 

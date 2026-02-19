@@ -1,6 +1,7 @@
 "use client"
 
-import { Plus, Users, Trash2 } from "lucide-react"
+import { LogOut, Plus, Users, Trash2 } from "lucide-react"
+import { signOutAction } from "@/app/actions/auth"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Group } from "@/lib/types"
@@ -108,6 +109,20 @@ export function GroupSidebar({
             </Button>
           </div>
         ))}
+      </div>
+
+      <div className="receipt-divider border-t border-border px-2 py-2">
+        <form action={signOutAction}>
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
+          </Button>
+        </form>
       </div>
     </div>
   )

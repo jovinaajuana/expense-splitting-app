@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { Member } from "@/lib/types"
 
+export type AddMemberResult = { ok: true } | { ok: false; message: string }
+
 interface MemberPanelProps {
   members: Member[]
-  onAddMember: (name: string, email: string) => void
+  onAddMember: (name: string, email: string) => Promise<AddMemberResult>
   onRemoveMember: (id: string) => void
 }
 
@@ -19,14 +21,25 @@ export function MemberPanel({ members, onAddMember, onRemoveMember }: MemberPane
   const [isAdding, setIsAdding] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (name.trim() && email.trim()) {
-      onAddMember(name.trim(), email.trim())
-      setName("")
-      setEmail("")
-      setIsAdding(false)
+    if (!name.trim() || !email.trim()) return
+    setError(null)
+    setSubmitting(true)
+    try {
+      const result = await onAddMember(name.trim(), email.trim())
+      if (result.ok) {
+        setName("")
+        setEmail("")
+        setIsAdding(false)
+      } else {
+        setError(result.message)
+      }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -34,6 +47,7 @@ export function MemberPanel({ members, onAddMember, onRemoveMember }: MemberPane
     setIsAdding(false)
     setName("")
     setEmail("")
+    setError(null)
   }
 
   /* Empty state: add member form/button aligned to top, like first member row */
@@ -41,32 +55,35 @@ export function MemberPanel({ members, onAddMember, onRemoveMember }: MemberPane
     return (
       <div className="flex flex-col items-stretch justify-start">
         {isAdding ? (
-          <form onSubmit={handleSubmit} className="flex w-full max-w-md items-end gap-2">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Name"
-              className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
-              autoFocus
-            />
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              className="h-8 shrink-0 px-3 text-xs"
-              disabled={!name.trim() || !email.trim()}
-            >
-              Add
-            </Button>
-            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={cancelAdd} aria-label="Cancel">
-              <X className="h-3.5 w-3.5" />
-            </Button>
+          <form onSubmit={handleSubmit} className="flex w-full max-w-md flex-col gap-2">
+            <div className="flex items-end gap-2">
+              <Input
+                value={name}
+                onChange={(e) => { setName(e.target.value); setError(null) }}
+                placeholder="Name"
+                className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
+                autoFocus
+              />
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(null) }}
+                placeholder="Email"
+                className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="h-8 shrink-0 px-3 text-xs"
+                disabled={!name.trim() || !email.trim() || submitting}
+              >
+                {submitting ? "…" : "Add"}
+              </Button>
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={cancelAdd} aria-label="Cancel">
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            {error && <p className="text-xs text-destructive">{error}</p>}
           </form>
         ) : (
           <button
@@ -118,32 +135,35 @@ export function MemberPanel({ members, onAddMember, onRemoveMember }: MemberPane
 
       {/* Add member at bottom: button or inline form */}
       {isAdding ? (
-        <form onSubmit={handleSubmit} className="flex items-end gap-2 border-t border-border pt-4">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
-            className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
-            autoFocus
-          />
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            className="h-8 shrink-0 px-3 text-xs"
-            disabled={!name.trim() || !email.trim()}
-          >
-            Add
-          </Button>
-          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={cancelAdd} aria-label="Cancel">
-            <X className="h-3.5 w-3.5" />
-          </Button>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2 border-t border-border pt-4">
+          <div className="flex items-end gap-2">
+            <Input
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError(null) }}
+              placeholder="Name"
+              className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
+              autoFocus
+            />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(null) }}
+              placeholder="Email"
+              className="h-8 flex-1 min-w-0 text-sm border-border bg-card"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              className="h-8 shrink-0 px-3 text-xs"
+              disabled={!name.trim() || !email.trim() || submitting}
+            >
+              {submitting ? "…" : "Add"}
+            </Button>
+            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={cancelAdd} aria-label="Cancel">
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {error && <p className="text-xs text-destructive">{error}</p>}
         </form>
       ) : (
         <button

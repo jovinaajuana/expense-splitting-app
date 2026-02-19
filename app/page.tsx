@@ -1,32 +1,94 @@
   "use client"
 
-import { useReducer, useState, useCallback } from "react"
+import { useReducer, useState, useCallback, useEffect, useRef } from "react"
 import { MacWindow } from "@/components/mac-window"
 import { GroupSidebar } from "@/components/group-sidebar"
 import { GroupDetail } from "@/components/group-detail"
 import { AddGroupModal } from "@/components/add-group-modal"
 import { appReducer, type AppState } from "@/lib/store"
-import type { Expense } from "@/lib/types"
+import type { Expense, Group } from "@/lib/types"
 import { generateId } from "@/lib/expense-logic"
+import { createClient } from "@/lib/supabase/client"
+import { fetchUserGroups, saveUserGroups, checkUserExistsByEmail, syncGroupToMember, syncGroupToAllMembers } from "@/lib/persistence"
 import { Layers } from "lucide-react"
 
 const initialState: AppState = {
   groups: [],
 }
 
+const SAVE_DEBOUNCE_MS = 1500
+
 export default function Home() {
   const [state, dispatch] = useReducer(appReducer, initialState)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [showAddGroupModal, setShowAddGroupModal] = useState(false)
+  const [hydrationDone, setHydrationDone] = useState(false)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const selectedGroup = state.groups.find((g) => g.id === selectedGroupId)
 
+  // Load persisted groups when user is logged in
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const groups = await fetchUserGroups()
+      if (!cancelled && groups !== null) {
+        dispatch({ type: "HYDRATE", payload: { groups } })
+      }
+      if (!cancelled) setHydrationDone(true)
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Persist groups when state changes (debounced), only after initial hydration.
+  // Also push each group to all members so expenses and balances stay in sync.
+  useEffect(() => {
+    if (!hydrationDone) return
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    saveTimeoutRef.current = setTimeout(async () => {
+      saveTimeoutRef.current = null
+      await saveUserGroups(state.groups)
+      for (const group of state.groups) {
+        if (group.members.length > 0) {
+          await syncGroupToAllMembers(group)
+        }
+      }
+    }, SAVE_DEBOUNCE_MS)
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    }
+  }, [hydrationDone, state.groups])
+
   const handleAddGroupWithMembers = useCallback(
-    (name: string, members: { name: string; email: string }[]) => {
+    async (name: string, members: { name: string; email: string }[]) => {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      const creatorMember = user
+        ? {
+            name:
+              (user.user_metadata?.full_name as string) ??
+              user.email?.split("@")[0] ??
+              "Me",
+            email: user.email ?? "",
+          }
+        : null
+      const allMembers = creatorMember
+        ? [
+            creatorMember,
+            ...members.filter(
+              (m) => m.email.toLowerCase() !== creatorMember.email.toLowerCase()
+            ),
+          ]
+        : members
       const id = generateId()
       dispatch({
         type: "ADD_GROUP",
-        payload: { name, id, members },
+        payload: { name, id, members: allMembers },
       })
       setSelectedGroupId(id)
       setShowAddGroupModal(false)
@@ -91,15 +153,27 @@ export default function Home() {
               <GroupDetail
                 group={selectedGroup}
                 onBack={() => setSelectedGroupId(null)}
-                onAddMember={(name, email) =>
+                onAddMember={async (name, email) => {
+                  const exists = await checkUserExistsByEmail(email)
+                  if (!exists) {
+                    return { ok: false as const, message: "No account found with this email. They need to sign up first." }
+                  }
+                  const memberId = generateId()
+                  const newMember = { id: memberId, name, email }
+                  const groupWithNewMember: Group = {
+                    ...selectedGroup,
+                    members: [...selectedGroup.members, newMember],
+                  }
+                  await syncGroupToMember(email, groupWithNewMember)
                   dispatch({
                     type: "ADD_MEMBER",
                     payload: {
                       groupId: selectedGroup.id,
-                      member: { name, email },
+                      member: newMember,
                     },
                   })
-                }
+                  return { ok: true as const }
+                }}
                 onRemoveMember={(memberId) =>
                   dispatch({
                     type: "REMOVE_MEMBER",

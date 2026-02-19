@@ -20,7 +20,7 @@ export type AppAction =
   | { type: "DELETE_GROUP"; payload: { groupId: string } }
   | {
       type: "ADD_MEMBER"
-      payload: { groupId: string; member: Omit<Member, "id"> }
+      payload: { groupId: string; member: Omit<Member, "id"> | Member }
     }
   | {
       type: "REMOVE_MEMBER"
@@ -56,6 +56,7 @@ export type AppAction =
         }
       }
     }
+  | { type: "HYDRATE"; payload: { groups: Group[] } }
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
@@ -81,17 +82,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
     }
     case "ADD_MEMBER": {
+      const memberId =
+        "id" in action.payload.member && action.payload.member.id
+          ? action.payload.member.id
+          : generateId()
+      const member: Member = {
+        ...action.payload.member,
+        id: memberId,
+      }
       return {
         ...state,
         groups: state.groups.map((g) =>
           g.id === action.payload.groupId
-            ? {
-                ...g,
-                members: [
-                  ...g.members,
-                  { ...action.payload.member, id: generateId() },
-                ],
-              }
+            ? { ...g, members: [...g.members, member] }
             : g
         ),
       }
@@ -178,6 +181,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
             : g
         ),
       }
+    }
+    case "HYDRATE": {
+      return { ...state, groups: action.payload.groups }
     }
     default:
       return state

@@ -19,7 +19,7 @@ import { formatCurrency, simplifyDebts } from "@/lib/expense-logic"
 interface GroupDetailProps {
   group: Group
   onBack?: () => void
-  onAddMember: (name: string, email: string) => void
+  onAddMember: (name: string, email: string) => Promise<{ ok: true } | { ok: false; message: string }>
   onRemoveMember: (id: string) => void
   onAddExpense: (expense: Omit<Expense, "id" | "createdAt">) => void
   onUpdateExpense?: (expenseId: string, expense: Omit<Expense, "id" | "createdAt">) => void
@@ -187,6 +187,7 @@ export function GroupDetail({
             </DialogTitle>
           </DialogHeader>
           <SettlementPanel
+            key={showSettleUp ? "open" : "closed"}
             group={group}
             onRecordPayment={
               onRecordPayment

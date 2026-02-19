@@ -149,8 +149,8 @@ export function ExpenseForm({
         />
       </div>
 
-      <div className="flex gap-3">
-        <div className="flex flex-1 flex-col gap-1.5">
+      <div className="grid grid-cols-[33.333%_1fr] gap-3">
+        <div className="flex flex-col gap-1.5">
           <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
             Amount
           </Label>
@@ -169,14 +169,14 @@ export function ExpenseForm({
             />
           </div>
         </div>
-        <div className="flex flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <Label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
             Paid by
           </Label>
           <select
             value={paidById}
             onChange={(e) => setPaidById(e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {members.map((m) => (
               <option key={m.id} value={m.id}>

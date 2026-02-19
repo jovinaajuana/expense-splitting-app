@@ -16,32 +16,37 @@ interface BalancesListProps {
 export function BalancesList({ group, onAddMember }: BalancesListProps) {
   const netBalances = calculateNetBalances(group)
 
+  // When there are no members, show "You" with 0 balance so the user still sees the balance when they're the only one
   if (group.members.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 py-12">
-        <p className="text-sm text-muted-foreground mb-4">
-          Add members to see balance
-        </p>
-        {onAddMember && (
-          <button
-            type="button"
-            onClick={onAddMember}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-card px-4 text-sm font-medium text-foreground hover:bg-muted/80 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Add member
-          </button>
-        )}
-      </div>
-    )
-  }
-
-  if (group.expenses.length === 0) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Add expenses to see balances
-        </p>
+      <div className="flex flex-col divide-y divide-border">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
+            YO
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">You</p>
+            <p className="text-xs text-muted-foreground">settled</p>
+          </div>
+          <span className="text-sm font-semibold tabular-nums shrink-0 text-muted-foreground">
+            {formatCurrency(0)}
+          </span>
+        </div>
+        <div className="flex flex-col items-center justify-center p-4 border-t border-border">
+          <p className="text-xs text-muted-foreground mb-3">
+            Add members to split expenses
+          </p>
+          {onAddMember && (
+            <button
+              type="button"
+              onClick={onAddMember}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border bg-card px-3 text-xs font-medium text-foreground hover:bg-muted/80 transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add member
+            </button>
+          )}
+        </div>
       </div>
     )
   }
