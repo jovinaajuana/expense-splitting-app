@@ -1,0 +1,19 @@
+0 verbose cli /Users/jovinajuana/.nvm/versions/node/v20.19.6/bin/node /Users/jovinajuana/.nvm/versions/node/v20.19.6/bin/npm
+1 info using npm@10.8.2
+2 info using node@v20.19.6
+3 silly config load:file:/Users/jovinajuana/.nvm/versions/node/v20.19.6/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/jovinajuana/Coding Projects/Expense Splitting App/.npmrc
+5 silly config load:file:/Users/jovinajuana/.npmrc
+6 silly config load:file:/Users/jovinajuana/etc/npmrc
+7 verbose title npm install
+8 verbose argv "install" "--cache" "./npm-cache"
+9 verbose logfile logs-max:10 dir:/Users/jovinajuana/Coding Projects/Expense Splitting App/npm-cache/_logs/2026-02-12T02_48_08_513Z-
+10 verbose logfile /Users/jovinajuana/Coding Projects/Expense Splitting App/npm-cache/_logs/2026-02-12T02_48_08_513Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /Users/jovinajuana/Coding Projects/Expense Splitting App
+13 verbose os Darwin 23.6.0
+14 verbose node v20.19.6
+15 verbose npm  v10.8.2
+16 verbose exit 1
+17 verbose code 1
+18 error A complete log of this run can be found in: /Users/jovinajuana/Coding Projects/Expense Splitting App/npm-cache/_logs/2026-02-12T02_48_08_513Z-debug-0.log
